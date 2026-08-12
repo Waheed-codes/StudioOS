@@ -110,12 +110,12 @@
   <!-- Main Area -->
   <main>
     <header>
-      <div style="display: flex; align-items: center; gap: 16px;">
+      <div class="header-left">
         <button class="menu-toggle" id="menuToggleBtn">☰</button>
         <h1 class="header-title" id="pageTitle">Dashboard</h1>
       </div>
       <div class="user-profile">
-        <span style="font-size: 0.875rem; font-weight: 500;">Capture Studio</span>
+        <span>Capture Studio</span>
         <div class="avatar">CS</div>
       </div>
     </header>
@@ -135,11 +135,11 @@
           </div>
           <div class="stat-card">
             <div class="stat-label">Pending Payments</div>
-            <div class="stat-value" id="statPendingPayments">$0.00</div>
+            <div class="stat-value" id="statPendingPayments">₹0.00</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Monthly Revenue</div>
-            <div class="stat-value" id="statMonthlyRevenue">$0.00</div>
+            <div class="stat-value" id="statMonthlyRevenue">₹0.00</div>
           </div>
         </div>
 
@@ -180,31 +180,19 @@
               <div class="card-title">Quick Actions</div>
               <div class="quick-actions">
                 <button class="btn btn-primary" id="qaNewBookingBtn">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                    style="width: 14px; height: 14px;">
+                  <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
                   New Booking
-                </button>
-                <button class="btn" id="qaNewClientBtn">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                    style="width: 14px; height: 14px;">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <line x1="19" y1="8" x2="19" y2="14"></line>
-                    <line x1="16" y1="11" x2="22" y2="11"></line>
-                  </svg>
-                  Add Client
                 </button>
               </div>
             </div>
 
             <div class="card">
               <div class="card-title">Active Team Members</div>
-              <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px;" id="dashboardTeamList">
+              <ul class="dashboard-team-list" id="dashboardTeamList">
                 <!-- Dynamically loaded team list -->
               </ul>
             </div>
@@ -251,20 +239,17 @@
 
           <!-- Calendar Right Sidebar -->
           <div class="calendar-sidebar">
-            <button class="btn btn-primary btn-block" id="calNewBookingBtn"
-              style="width: 100%; justify-content: center; padding: 10px; margin-bottom: 20px; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+            <button class="btn btn-primary btn-block" id="calNewBookingBtn">
+              <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
               New Booking
             </button>
 
-            <div class="card sidebar-summary-card" style="padding: 16px; margin-bottom: 20px;">
-              <div class="card-title"
-                style="font-size: 0.85rem; margin-bottom: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">
-                Calendar Summary</div>
+            <div class="card sidebar-summary-card sidebar-card">
+              <div class="card-title sidebar-card-title">Calendar Summary</div>
               <div class="summary-stat-row">
                 <span>Total Bookings</span>
                 <strong id="calTotalBookingsCount">0</strong>
@@ -279,10 +264,8 @@
               </div>
             </div>
 
-            <div class="card sidebar-upcoming-card" style="padding: 16px;">
-              <div class="card-title"
-                style="font-size: 0.85rem; margin-bottom: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">
-                Upcoming Shoots</div>
+            <div class="card sidebar-upcoming-card sidebar-card">
+              <div class="card-title sidebar-card-title">Upcoming Shoots</div>
               <div class="upcoming-list" id="calendarSidebarUpcomingList">
                 <!-- Dynamically loaded upcoming shoots list -->
               </div>
@@ -300,8 +283,8 @@
                 placeholder="Search clients by name, email or phone...">
             </div>
             <button class="btn btn-primary" id="addClientBtn">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+              <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
                 <line x1="19" y1="8" x2="19" y2="14"></line>
@@ -331,7 +314,6 @@
       </section>
 
       <!-- BOOKINGS VIEW -->
-      <!-- BOOKINGS VIEW -->
       <section id="bookings" class="view-section">
         <div class="card">
           <div class="search-filter-bar">
@@ -340,8 +322,8 @@
                 placeholder="Search bookings by client or shoot type...">
             </div>
             <button class="btn btn-primary" id="addBookingBtn">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+              <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
@@ -377,15 +359,15 @@
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-label">Total Revenue</div>
-            <div class="stat-value" id="paymentsTotalRev">$0.00</div>
+            <div class="stat-value" id="paymentsTotalRev">₹0.00</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Paid Amount</div>
-            <div class="stat-value" id="paymentsPaid">$0.00</div>
+            <div class="stat-value" id="paymentsPaid">₹0.00</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Unpaid / Pending</div>
-            <div class="stat-value" id="paymentsPending">$0.00</div>
+            <div class="stat-value" id="paymentsPending">₹0.00</div>
           </div>
         </div>
         <div class="card">
@@ -417,8 +399,8 @@
           <div class="card-title">
             <span>Team Management</span>
             <button class="btn btn-primary btn-sm" id="addTeamMemberBtn">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;">
+              <svg class="icon-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
                 <line x1="19" y1="8" x2="19" y2="14"></line>
@@ -457,7 +439,7 @@
             </div>
             <div class="form-group">
               <label for="studioCurrency">Currency Symbol</label>
-              <input type="text" id="studioCurrency" class="form-control" value="$">
+              <input type="text" id="studioCurrency" class="form-control" value="₹">
             </div>
             <div class="form-group">
               <label for="studioEmail">Studio Email Address</label>
@@ -517,16 +499,38 @@
         <input type="hidden" id="editBookingId">
         <div class="modal-body">
           <!-- Scheduling Conflict Warnings Area -->
-          <div id="bookingConflictWarning" class="conflict-alert" style="display: none;">
+          <div id="bookingConflictWarning" class="conflict-alert">
             <span>⚠️ <strong>Schedule Conflict:</strong> The assigned photographer is already booked during this time on
               this day.</span>
           </div>
 
           <div class="form-group">
-            <label for="bookingClient">Client *</label>
+            <div class="form-group-label-row">
+              <label for="bookingClient">Client *</label>
+              <button type="button" class="link-btn" id="toggleInlineClientBtn" aria-label="Add a new client">+ New Client</button>
+            </div>
             <select id="bookingClient" class="form-control" required>
               <option value="">Select a client...</option>
             </select>
+
+            <!-- Inline quick-add client fields: hidden by default, shown when
+                 the "+ New Client" toggle is clicked. Lets a user create a
+                 brand-new client and book them in a single submit, instead of
+                 going through the standalone Add Client modal first. -->
+            <div id="inlineNewClientFields" class="inline-new-client-fields hidden">
+              <div class="form-group">
+                <label for="inlineClientName">Full Name *</label>
+                <input type="text" id="inlineClientName" class="form-control" placeholder="Client's full name">
+              </div>
+              <div class="form-group">
+                <label for="inlineClientEmail">Email Address *</label>
+                <input type="email" id="inlineClientEmail" class="form-control" placeholder="client@example.com">
+              </div>
+              <div class="form-group">
+                <label for="inlineClientPhone">Phone Number *</label>
+                <input type="tel" id="inlineClientPhone" class="form-control" placeholder="555-0100">
+              </div>
+            </div>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -567,11 +571,11 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="bookingTotal">Total Amount ($) *</label>
+              <label for="bookingTotal">Total Amount (₹) *</label>
               <input type="number" id="bookingTotal" class="form-control" min="0" step="0.01" required>
             </div>
             <div class="form-group">
-              <label for="bookingPaid">Amount Paid ($) *</label>
+              <label for="bookingPaid">Amount Paid (₹) *</label>
               <input type="number" id="bookingPaid" class="form-control" min="0" step="0.01" required>
             </div>
           </div>

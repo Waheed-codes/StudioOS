@@ -1,6 +1,6 @@
 // StudioOS - Main Application Logic
 
-// Helper: Get today's date string in YYYY-MM-DD format
+// Get today's date string in YYYY-MM-DD format
 function getTodayString() {
   const today = new Date();
   const year = today.getFullYear();
@@ -9,7 +9,7 @@ function getTodayString() {
   return `${year}-${month}-${day}`;
 }
 
-// Helper: Get tomorrow's date string in YYYY-MM-DD format
+// Get tomorrow's date string in YYYY-MM-DD format
 function getTomorrowString() {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -17,6 +17,14 @@ function getTomorrowString() {
   const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
   const day = String(tomorrow.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+// Maps a booking status to its badge CSS class. Shared by the dashboard,
+// bookings table, and payments table so the logic only lives in one place.
+function getStatusBadgeClass(status) {
+  if (status === 'Confirmed') return 'badge-success';
+  if (status === 'Cancelled') return 'badge-danger';
+  return 'badge-info';
 }
 
 // Initial Mock Data
@@ -77,17 +85,23 @@ const defaultBookings = [
   }
 ];
 
+const defaultSettings = {
+  studioName: "Capture Studio",
+  currency: "₹",
+  email: "hello@capturestudio.com"
+};
+
 // App State
 let state = {
   clients: JSON.parse(localStorage.getItem('studioos_clients')) || defaultClients,
   team: JSON.parse(localStorage.getItem('studioos_team')) || defaultTeam,
   bookings: JSON.parse(localStorage.getItem('studioos_bookings')) || defaultBookings,
-  settings: JSON.parse(localStorage.getItem('studioos_settings')) || {
-    studioName: "Capture Studio",
-    currency: "$",
-    email: "hello@capturestudio.com"
-  }
+  settings: JSON.parse(localStorage.getItem('studioos_settings')) || defaultSettings
 };
+
+// Tracks whether the booking modal is currently showing the inline
+// "quick-add client" fields instead of the client dropdown.
+let isAddingNewClientInline = false;
 
 // Save state to localStorage
 function saveState() {
@@ -124,36 +138,41 @@ function checkConflict(photographerId, date, startTime, endTime, excludeBookingI
 }
 
 // Navigation / Router
-function initNavigation() {
+//
+// navigateToView is a top-level function (not scoped inside initNavigation)
+// so other code paths — like saveBooking — can jump to a view themselves,
+// e.g. only switching to Bookings once a booking has actually been saved,
+// rather than navigating up front just to open a modal.
+function navigateToView(viewId) {
   const sidebar = document.getElementById('sidebar');
   const navItems = sidebar.querySelectorAll('ul.nav-links li');
   const views = document.querySelectorAll('.view-section');
   const pageTitle = document.getElementById('pageTitle');
-  const menuToggleBtn = document.getElementById('menuToggleBtn');
 
-  function navigateTo(viewId) {
-    views.forEach(view => {
-      view.classList.toggle('active', view.id === viewId);
-    });
-    navItems.forEach(item => {
-      item.classList.toggle('active', item.getAttribute('data-view') === viewId);
-    });
-    pageTitle.textContent = viewId.charAt(0).toUpperCase() + viewId.slice(1);
-    
-    // Custom header labels
-    if (viewId === 'dashboard') pageTitle.textContent = 'Dashboard';
-    
-    renderView(viewId);
-    
-    // Close sidebar on mobile after navigating
-    sidebar.classList.remove('active');
-  }
+  views.forEach(view => {
+    view.classList.toggle('active', view.id === viewId);
+  });
+  navItems.forEach(item => {
+    item.classList.toggle('active', item.getAttribute('data-view') === viewId);
+  });
+  pageTitle.textContent = viewId.charAt(0).toUpperCase() + viewId.slice(1);
+
+  renderView(viewId);
+
+  // Close sidebar on mobile after navigating
+  sidebar.classList.remove('active');
+}
+
+function initNavigation() {
+  const sidebar = document.getElementById('sidebar');
+  const navItems = sidebar.querySelectorAll('ul.nav-links li');
+  const menuToggleBtn = document.getElementById('menuToggleBtn');
 
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const viewId = item.getAttribute('data-view');
-      navigateTo(viewId);
+      navigateToView(viewId);
     });
   });
 
@@ -164,9 +183,9 @@ function initNavigation() {
   // Handle hash navigation on load
   const hash = window.location.hash.replace('#', '');
   if (hash && ['dashboard', 'calendar', 'clients', 'bookings', 'payments', 'team', 'settings'].includes(hash)) {
-    navigateTo(hash);
+    navigateToView(hash);
   } else {
-    navigateTo('dashboard');
+    navigateToView('dashboard');
   }
 }
 
@@ -174,16 +193,16 @@ function initNavigation() {
 function renderClients(filterText = '') {
   const tbody = document.getElementById('clientsTableBody');
   tbody.innerHTML = '';
-  
+
   const query = filterText.toLowerCase().trim();
-  const filtered = state.clients.filter(c => 
+  const filtered = state.clients.filter(c =>
     c.name.toLowerCase().includes(query) ||
     c.email.toLowerCase().includes(query) ||
     c.phone.toLowerCase().includes(query)
   );
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No clients found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No clients found.</td></tr>`;
     return;
   }
 
@@ -193,15 +212,15 @@ function renderClients(filterText = '') {
       <td><strong>${escapeHTML(client.name)}</strong></td>
       <td>${escapeHTML(client.email)}</td>
       <td>${escapeHTML(client.phone)}</td>
-      <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <td class="cell-truncate">
         ${escapeHTML(client.notes || '')}
       </td>
       <td>
         <button class="btn btn-sm btn-edit-client" data-id="${client.id}">Edit</button>
-        <button class="btn btn-sm btn-danger btn-delete-client" style="color: white; background-color: var(--danger-color); border-color: var(--danger-color);" data-id="${client.id}">Delete</button>
+        <button class="btn btn-sm btn-danger btn-delete-client" data-id="${client.id}">Delete</button>
       </td>
     `;
-    
+
     tr.querySelector('.btn-edit-client').addEventListener('click', () => openClientModal(client.id));
     tr.querySelector('.btn-delete-client').addEventListener('click', () => deleteClient(client.id));
     tbody.appendChild(tr);
@@ -212,9 +231,9 @@ function openClientModal(clientId = null) {
   const modal = document.getElementById('clientModal');
   const form = document.getElementById('clientForm');
   const title = document.getElementById('clientModalTitle');
-  
+
   form.reset();
-  
+
   if (clientId) {
     const client = state.clients.find(c => c.id === clientId);
     if (client) {
@@ -229,7 +248,7 @@ function openClientModal(clientId = null) {
     title.textContent = 'Add Client';
     document.getElementById('editClientId').value = '';
   }
-  
+
   modal.classList.add('active');
 }
 
@@ -278,7 +297,7 @@ function renderBookings(filterText = '') {
   tbody.innerHTML = '';
 
   const query = filterText.toLowerCase().trim();
-  
+
   const enrichedBookings = state.bookings.map(b => {
     const client = state.clients.find(c => c.id === b.clientId) || { name: 'Unknown Client' };
     const photographer = state.team.find(t => t.id === b.photographerId) || { name: 'Unassigned' };
@@ -286,51 +305,46 @@ function renderBookings(filterText = '') {
     return { ...b, clientName: client.name, photographerName: photographer.name, hasConflict };
   });
 
-  const filtered = enrichedBookings.filter(b => 
+  const filtered = enrichedBookings.filter(b =>
     b.clientName.toLowerCase().includes(query) ||
     b.shootType.toLowerCase().includes(query) ||
     b.photographerName.toLowerCase().includes(query)
   );
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-secondary);">No bookings found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No bookings found.</td></tr>`;
     return;
   }
 
+  const cur = state.settings.currency || '₹';
+
   filtered.forEach(booking => {
     const tr = document.createElement('tr');
-    
-    // Status Badge
-    let statusClass = 'badge-info';
-    if (booking.status === 'Confirmed') statusClass = 'badge-success';
-    if (booking.status === 'Cancelled') statusClass = 'badge-danger';
-    
-    // Currency
-    const cur = state.settings.currency || '$';
-    
+    const statusClass = getStatusBadgeClass(booking.status);
+
     tr.innerHTML = `
       <td><strong>${escapeHTML(booking.clientName)}</strong></td>
       <td>${escapeHTML(booking.shootType)}</td>
-      <td style="white-space: nowrap;">
-        <div style="font-weight: 500; color: var(--text-primary);">${booking.date}</div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary);">${booking.startTime} - ${booking.endTime}</div>
+      <td class="cell-nowrap">
+        <div class="cell-primary">${booking.date}</div>
+        <div class="cell-secondary">${booking.startTime} - ${booking.endTime}</div>
       </td>
       <td>${escapeHTML(booking.location)}</td>
       <td>${escapeHTML(booking.photographerName)}</td>
       <td>
         <div>${cur}${booking.totalAmount.toFixed(2)}</div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary);">Paid: ${cur}${booking.amountPaid.toFixed(2)}</div>
+        <div class="cell-secondary">Paid: ${cur}${booking.amountPaid.toFixed(2)}</div>
       </td>
       <td><span class="badge ${statusClass}">${booking.status}</span></td>
       <td>
         ${booking.hasConflict && booking.status !== 'Cancelled'
-          ? `<span class="badge badge-danger">⚠️ Overlap</span>` 
+          ? `<span class="badge badge-danger">⚠️ Overlap</span>`
           : `<span class="badge badge-success">OK</span>`}
       </td>
       <td>
-        <div style="display: flex; gap: 6px; align-items: center;">
+        <div class="table-actions">
           <button class="btn btn-sm btn-edit-booking" data-id="${booking.id}">Edit</button>
-          <button class="btn btn-sm btn-danger btn-delete-booking" style="color: white; background-color: var(--danger-color); border-color: var(--danger-color);" data-id="${booking.id}">Delete</button>
+          <button class="btn btn-sm btn-danger btn-delete-booking" data-id="${booking.id}">Delete</button>
         </div>
       </td>
     `;
@@ -365,6 +379,58 @@ function populatePhotographerDropdown(selectedId = '') {
   });
 }
 
+// Toggles the booking modal between the client dropdown and the inline
+// "quick-add client" fields. Keeps required-attribute state in sync so
+// native form validation only enforces whichever mode is visible.
+function setInlineNewClientMode(show) {
+  isAddingNewClientInline = show;
+
+  const inlineFields = document.getElementById('inlineNewClientFields');
+  const toggleBtn = document.getElementById('toggleInlineClientBtn');
+  const clientDropdown = document.getElementById('bookingClient');
+  const inlineName = document.getElementById('inlineClientName');
+  const inlineEmail = document.getElementById('inlineClientEmail');
+  const inlinePhone = document.getElementById('inlineClientPhone');
+
+  inlineFields.classList.toggle('hidden', !show);
+
+  // The same button does double duty: "+ New Client" opens the inline
+  // fields, and it becomes a "×" close control once they're open — rather
+  // than a separate toggle button plus a separate "Cancel" link.
+  if (show) {
+    toggleBtn.textContent = '×';
+    toggleBtn.classList.add('link-btn-close');
+    toggleBtn.setAttribute('aria-label', 'Cancel adding a new client');
+    toggleBtn.title = 'Cancel — choose existing client';
+  } else {
+    toggleBtn.textContent = '+ New Client';
+    toggleBtn.classList.remove('link-btn-close');
+    toggleBtn.setAttribute('aria-label', 'Add a new client');
+    toggleBtn.removeAttribute('title');
+  }
+
+  if (show) {
+    clientDropdown.classList.add('hidden');
+    clientDropdown.required = false;
+    clientDropdown.value = '';
+
+    inlineName.required = true;
+    inlineEmail.required = true;
+    inlinePhone.required = true;
+  } else {
+    clientDropdown.classList.remove('hidden');
+    clientDropdown.required = true;
+
+    inlineName.required = false;
+    inlineEmail.required = false;
+    inlinePhone.required = false;
+
+    inlineName.value = '';
+    inlineEmail.value = '';
+    inlinePhone.value = '';
+  }
+}
+
 function openBookingModal(bookingId = null) {
   const modal = document.getElementById('bookingModal');
   const form = document.getElementById('bookingForm');
@@ -372,7 +438,10 @@ function openBookingModal(bookingId = null) {
   const conflictDiv = document.getElementById('bookingConflictWarning');
 
   form.reset();
-  conflictDiv.style.display = 'none';
+  conflictDiv.classList.remove('show');
+  // Always start in dropdown mode with no stale inline values, whether this
+  // modal was opened from Bookings, Calendar, or the Dashboard quick action.
+  setInlineNewClientMode(false);
 
   populateClientDropdown();
   populatePhotographerDropdown();
@@ -393,7 +462,7 @@ function openBookingModal(bookingId = null) {
       document.getElementById('bookingPaid').value = booking.amountPaid;
       document.getElementById('bookingStatus').value = booking.status;
       document.getElementById('bookingNotes').value = booking.notes || '';
-      
+
       triggerConflictCheck();
     }
   } else {
@@ -419,18 +488,43 @@ function triggerConflictCheck() {
   const status = document.getElementById('bookingStatus').value;
 
   const warningDiv = document.getElementById('bookingConflictWarning');
-  
-  if (status !== 'Cancelled' && checkConflict(photographerId, date, startTime, endTime, bookingId)) {
-    warningDiv.style.display = 'flex';
-  } else {
-    warningDiv.style.display = 'none';
-  }
+
+  const hasConflict = status !== 'Cancelled' && checkConflict(photographerId, date, startTime, endTime, bookingId);
+  warningDiv.classList.toggle('show', hasConflict);
 }
 
 function saveBooking(e) {
   e.preventDefault();
+
+  let clientId = document.getElementById('bookingClient').value;
+
+  // If the user chose "+ New Client", create that client first (same logic
+  // as saveClient's add-mode branch), then use its id for the booking below.
+  // This keeps the whole thing a single atomic submit.
+  if (isAddingNewClientInline) {
+    const inlineName = document.getElementById('inlineClientName').value.trim();
+    const inlineEmail = document.getElementById('inlineClientEmail').value.trim();
+    const inlinePhone = document.getElementById('inlineClientPhone').value.trim();
+
+    if (!inlineName || !inlineEmail || !inlinePhone) {
+      // Native required attributes should prevent this, but guard anyway.
+      return;
+    }
+
+    const newClientId = 'c_' + Date.now();
+    state.clients.push({
+      id: newClientId,
+      name: inlineName,
+      email: inlineEmail,
+      phone: inlinePhone,
+      notes: ''
+    });
+    saveState();
+
+    clientId = newClientId;
+  }
+
   const id = document.getElementById('editBookingId').value;
-  const clientId = document.getElementById('bookingClient').value;
   const shootType = document.getElementById('bookingShootType').value;
   const date = document.getElementById('bookingDate').value;
   const startTime = document.getElementById('bookingStartTime').value;
@@ -468,8 +562,13 @@ function saveBooking(e) {
 
   saveState();
   closeBookingModal();
-  renderView('bookings');
-  renderView('dashboard');
+
+  // Only navigate now that the booking is actually confirmed/saved — the
+  // modal itself can be opened from any view (Dashboard, Calendar, Bookings)
+  // without jumping the user away first. Clients/Team/etc. re-render
+  // themselves the next time the user visits them, via navigateToView.
+  navigateToView('bookings');
+  renderView('dashboard'); // keep dashboard stats fresh in the background too
 }
 
 function deleteBooking(id) {
@@ -495,10 +594,10 @@ function renderTeam() {
       <td><span class="badge ${member.status === 'Active' ? 'badge-success' : 'badge-warning'}">${member.status}</span></td>
       <td>
         <button class="btn btn-sm btn-edit-team" data-id="${member.id}">Edit</button>
-        <button class="btn btn-sm btn-danger btn-delete-team" style="color: white; background-color: var(--danger-color); border-color: var(--danger-color);" data-id="${member.id}">Delete</button>
+        <button class="btn btn-sm btn-danger btn-delete-team" data-id="${member.id}">Delete</button>
       </td>
     `;
-    
+
     tr.querySelector('.btn-edit-team').addEventListener('click', () => openTeamModal(member.id));
     tr.querySelector('.btn-delete-team').addEventListener('click', () => deleteTeamMember(member.id));
     tbody.appendChild(tr);
@@ -567,7 +666,7 @@ function deleteTeamMember(id) {
 
 // Dashboard Page Renderer
 function renderDashboard() {
-  const cur = state.settings.currency || '$';
+  const cur = state.settings.currency || '₹';
   const todayStr = getTodayString();
 
   // 1. Calculate Stats
@@ -578,7 +677,7 @@ function renderDashboard() {
 
   let totalPending = 0;
   let totalRevenueThisMonth = 0;
-  
+
   const currentMonthStr = todayStr.substring(0, 7); // "YYYY-MM"
 
   state.bookings.forEach(b => {
@@ -600,12 +699,10 @@ function renderDashboard() {
   todayContainer.innerHTML = '';
 
   if (todayBookings.length === 0) {
-    todayContainer.innerHTML = `<p style="color: var(--text-secondary); text-align: center; padding: 20px 0;">No shoots scheduled for today.</p>`;
+    todayContainer.innerHTML = `<p class="empty-state-block">No shoots scheduled for today.</p>`;
   } else {
     const list = document.createElement('div');
-    list.style.display = 'flex';
-    list.style.flexDirection = 'column';
-    list.style.gap = '12px';
+    list.className = 'today-schedule-list';
 
     // Sort today's bookings chronologically
     todayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -613,26 +710,20 @@ function renderDashboard() {
     todayBookings.forEach(b => {
       const client = state.clients.find(c => c.id === b.clientId) || { name: 'Unknown' };
       const photographer = state.team.find(t => t.id === b.photographerId) || { name: 'Unassigned' };
-      
+
       const item = document.createElement('div');
-      item.style.padding = '12px';
-      item.style.border = '1px solid var(--border-color)';
-      item.style.borderRadius = 'var(--border-radius)';
-      item.style.backgroundColor = 'var(--bg-primary)';
-      item.style.display = 'flex';
-      item.style.justifyContent = 'space-between';
-      item.style.alignItems = 'center';
+      item.className = 'today-schedule-item';
 
       item.innerHTML = `
         <div>
-          <div style="font-weight: 600;">${b.startTime} - ${b.endTime}</div>
-          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+          <div class="today-schedule-time">${b.startTime} - ${b.endTime}</div>
+          <div class="today-schedule-meta">
             ${escapeHTML(client.name)} • ${escapeHTML(b.shootType)}
           </div>
         </div>
-        <div style="text-align: right;">
-          <div style="font-size: 0.85rem; font-weight: 500;">${escapeHTML(photographer.name)}</div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHTML(b.location)}</div>
+        <div>
+          <div class="today-schedule-photographer">${escapeHTML(photographer.name)}</div>
+          <div class="today-schedule-location">${escapeHTML(b.location)}</div>
         </div>
       `;
       list.appendChild(item);
@@ -650,16 +741,13 @@ function renderDashboard() {
     .slice(0, 5);
 
   if (upcomingBookings.length === 0) {
-    upcomingBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No upcoming bookings.</td></tr>`;
+    upcomingBody.innerHTML = `<tr><td colspan="5" class="empty-state">No upcoming bookings.</td></tr>`;
   } else {
     upcomingBookings.forEach(b => {
       const client = state.clients.find(c => c.id === b.clientId) || { name: 'Unknown' };
       const photographer = state.team.find(t => t.id === b.photographerId) || { name: 'Unassigned' };
       const tr = document.createElement('tr');
-      
-      let statusClass = 'badge-info';
-      if (b.status === 'Confirmed') statusClass = 'badge-success';
-      if (b.status === 'Cancelled') statusClass = 'badge-danger';
+      const statusClass = getStatusBadgeClass(b.status);
 
       tr.innerHTML = `
         <td><strong>${escapeHTML(client.name)}</strong></td>
@@ -677,23 +765,18 @@ function renderDashboard() {
   teamList.innerHTML = '';
   const activeTeam = state.team.filter(t => t.status === 'Active');
   if (activeTeam.length === 0) {
-    teamList.innerHTML = `<li style="color: var(--text-secondary); font-size: 0.875rem;">No active members.</li>`;
+    teamList.innerHTML = `<li class="empty-state">No active members.</li>`;
   } else {
     activeTeam.forEach(t => {
       const li = document.createElement('li');
-      li.style.display = 'flex';
-      li.style.alignItems = 'center';
-      li.style.justifyContent = 'space-between';
-      li.style.fontSize = '0.875rem';
-      li.style.padding = '8px 0';
-      li.style.borderBottom = '1px solid var(--border-color)';
-      
+      li.className = 'team-list-item';
+
       li.innerHTML = `
         <div>
-          <div style="font-weight: 500;">${escapeHTML(t.name)}</div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHTML(t.role)}</div>
+          <div class="text-medium">${escapeHTML(t.name)}</div>
+          <div class="team-list-role">${escapeHTML(t.role)}</div>
         </div>
-        <span class="badge badge-success" style="font-size: 0.7rem;">Active</span>
+        <span class="badge badge-success badge-sm">Active</span>
       `;
       teamList.appendChild(li);
     });
@@ -723,41 +806,56 @@ function updateCalendarSidebar() {
   const confirmedCount = document.getElementById('calConfirmedBookingsCount');
   const pendingCount = document.getElementById('calPendingBookingsCount');
   const upcomingList = document.getElementById('calendarSidebarUpcomingList');
-  
+
   if (!upcomingList) return;
-  
+
   const activeBookings = state.bookings.filter(b => b.status !== 'Cancelled');
   if (totalCount) totalCount.textContent = activeBookings.length;
   if (confirmedCount) confirmedCount.textContent = state.bookings.filter(b => b.status === 'Confirmed').length;
   if (pendingCount) pendingCount.textContent = state.bookings.filter(b => b.status === 'Pending').length;
-  
+
   upcomingList.innerHTML = '';
   const todayStr = getTodayString();
   const upcoming = state.bookings
     .filter(b => b.date >= todayStr && b.status !== 'Cancelled')
     .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
     .slice(0, 5);
-    
+
   if (upcoming.length === 0) {
-    upcomingList.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 12px 0;">No upcoming shoots.</p>`;
+    upcomingList.innerHTML = `<p class="empty-state-compact">No upcoming shoots.</p>`;
     return;
   }
-  
+
   upcoming.forEach(b => {
     const client = state.clients.find(c => c.id === b.clientId) || { name: 'Unknown' };
     const card = document.createElement('div');
     card.className = 'upcoming-shoot-card';
     card.innerHTML = `
       <div class="upcoming-shoot-time">${b.date} at ${b.startTime}</div>
-      <div class="upcoming-shoot-type">${b.shootType}</div>
-      <div class="upcoming-shoot-client">${client.name}</div>
+      <div class="upcoming-shoot-type">${escapeHTML(b.shootType)}</div>
+      <div class="upcoming-shoot-client">${escapeHTML(client.name)}</div>
     `;
     card.addEventListener('click', () => {
-      document.querySelector('[data-view="bookings"]').click();
+      // Open the edit modal right here on the Calendar view — no need to
+      // jump to Bookings just to look at/edit a shoot. If the booking is
+      // actually changed and saved, saveBooking() will navigate then.
       openBookingModal(b.id);
     });
     upcomingList.appendChild(card);
   });
+}
+
+// Sets the calendar grid's layout mode by swapping a modifier class,
+// instead of writing grid-template-columns/grid-auto-rows inline.
+function setCalendarGridMode(mode) {
+  const daysGrid = document.getElementById('calendarDaysGrid');
+  const gridHeader = document.querySelector('.calendar-grid-header');
+  ['mode-month', 'mode-week', 'mode-day'].forEach(cls => {
+    daysGrid.classList.remove(cls);
+    gridHeader.classList.remove(cls);
+  });
+  daysGrid.classList.add(`mode-${mode}`);
+  gridHeader.classList.add(`mode-${mode}`);
 }
 
 // Shared helper: builds a day cell div with bookings inside
@@ -814,11 +912,7 @@ function renderCalendarMonth() {
   const daysGrid = document.getElementById('calendarDaysGrid');
   const gridHeader = document.querySelector('.calendar-grid-header');
   daysGrid.innerHTML = '';
-
-  // Reset grid to 7 columns
-  daysGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  daysGrid.style.gridAutoRows = 'minmax(110px, 1fr)';
-  gridHeader.style.gridTemplateColumns = 'repeat(7, 1fr)';
+  setCalendarGridMode('month');
   gridHeader.innerHTML = DAY_NAMES_SHORT.map(d => `<div>${d}</div>`).join('');
 
   const year = currentCalendarDate.getFullYear();
@@ -857,26 +951,21 @@ function renderCalendarWeek() {
   const daysGrid = document.getElementById('calendarDaysGrid');
   const gridHeader = document.querySelector('.calendar-grid-header');
   daysGrid.innerHTML = '';
-
-  daysGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  daysGrid.style.gridAutoRows = 'minmax(280px, 1fr)';
+  setCalendarGridMode('week');
 
   const weekStart = getWeekStart(currentCalendarDate);
   const headerParts = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
-    headerParts.push(`<div>${DAY_NAMES_SHORT[i]}<br><span style="font-weight: 700; font-size: 1rem;">${d.getDate()}</span></div>`);
+    headerParts.push(`<div>${DAY_NAMES_SHORT[i]}<br><span class="week-day-number">${d.getDate()}</span></div>`);
   }
-  gridHeader.style.gridTemplateColumns = 'repeat(7, 1fr)';
   gridHeader.innerHTML = headerParts.join('');
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
-    const cell = buildDayCell(d, true);
-    cell.querySelector('.calendar-bookings-container').style.maxHeight = '240px';
-    daysGrid.appendChild(cell);
+    daysGrid.appendChild(buildDayCell(d, true));
   }
 }
 
@@ -885,17 +974,12 @@ function renderCalendarDay() {
   const daysGrid = document.getElementById('calendarDaysGrid');
   const gridHeader = document.querySelector('.calendar-grid-header');
   daysGrid.innerHTML = '';
-
-  daysGrid.style.gridTemplateColumns = '1fr';
-  daysGrid.style.gridAutoRows = 'minmax(360px, 1fr)';
+  setCalendarGridMode('day');
 
   const d = currentCalendarDate;
-  gridHeader.style.gridTemplateColumns = '1fr';
   gridHeader.innerHTML = `<div>${DAY_NAMES_FULL[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}</div>`;
 
-  const cell = buildDayCell(d, true);
-  cell.querySelector('.calendar-bookings-container').style.maxHeight = 'none';
-  daysGrid.appendChild(cell);
+  daysGrid.appendChild(buildDayCell(d, true));
 }
 
 // Calendar View Page Renderer (dispatcher)
@@ -933,8 +1017,8 @@ function renderCalendar() {
 
 // Payments Page Renderer
 function renderPayments() {
-  const cur = state.settings.currency || '$';
-  
+  const cur = state.settings.currency || '₹';
+
   let grandTotal = 0;
   let grandPaid = 0;
   let grandPending = 0;
@@ -945,18 +1029,18 @@ function renderPayments() {
   const activeBookings = state.bookings.filter(b => b.status !== 'Cancelled');
 
   if (activeBookings.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No payments records.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No payments records.</td></tr>`;
   } else {
     activeBookings.forEach(b => {
       const client = state.clients.find(c => c.id === b.clientId) || { name: 'Unknown' };
       const pending = b.totalAmount - b.amountPaid;
-      
+
       grandTotal += b.totalAmount;
       grandPaid += b.amountPaid;
       if (pending > 0) grandPending += pending;
 
       const isPaid = pending <= 0;
-      
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><strong>INV-${b.id.toUpperCase().substring(0, 6)}</strong></td>
@@ -983,7 +1067,7 @@ function renderPayments() {
 // Settings Page Handler
 function initSettingsForm() {
   const form = document.getElementById('settingsForm');
-  
+
   document.getElementById('studioName').value = state.settings.studioName;
   document.getElementById('studioCurrency').value = state.settings.currency;
   document.getElementById('studioEmail').value = state.settings.email;
@@ -993,11 +1077,11 @@ function initSettingsForm() {
     state.settings.studioName = document.getElementById('studioName').value;
     state.settings.currency = document.getElementById('studioCurrency').value;
     state.settings.email = document.getElementById('studioEmail').value;
-    
+
     // Update logo/name in UI
     document.querySelector('.logo-text').textContent = state.settings.studioName;
     document.querySelector('.user-profile span').textContent = state.settings.studioName;
-    
+
     saveState();
     alert("Settings saved successfully.");
     renderView('dashboard');
@@ -1017,7 +1101,7 @@ function renderView(viewId) {
 // Utility: HTML escaping to prevent XSS
 function escapeHTML(str) {
   if (!str) return '';
-  return str.replace(/[&<>'"]/g, 
+  return str.replace(/[&<>'"]/g,
     tag => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -1044,10 +1128,15 @@ function initEventListeners() {
   document.getElementById('bookingForm').addEventListener('submit', saveBooking);
   document.getElementById('bookingSearchInput').addEventListener('input', (e) => renderBookings(e.target.value));
 
-
   // Conflict checkers during input
   ['bookingPhotographer', 'bookingDate', 'bookingStartTime', 'bookingEndTime', 'bookingStatus'].forEach(id => {
     document.getElementById(id).addEventListener('change', triggerConflictCheck);
+  });
+
+  // Inline quick-add client toggle (inside booking modal). One button
+  // does both jobs: "+ New Client" opens the inline fields, "×" closes them.
+  document.getElementById('toggleInlineClientBtn').addEventListener('click', () => {
+    setInlineNewClientMode(!isAddingNewClientInline);
   });
 
   // Team View Actions
@@ -1057,14 +1146,10 @@ function initEventListeners() {
   document.getElementById('teamForm').addEventListener('submit', saveTeamMember);
 
   // Quick Actions from Dashboard
+  // Open the modal right where the user is — no view switch until the
+  // booking is actually saved (see navigateToView('bookings') in saveBooking).
   document.getElementById('qaNewBookingBtn').addEventListener('click', () => {
-    // Navigate to bookings then open modal
-    document.querySelector('[data-view="bookings"]').click();
     openBookingModal();
-  });
-  document.getElementById('qaNewClientBtn').addEventListener('click', () => {
-    document.querySelector('[data-view="clients"]').click();
-    openClientModal();
   });
 
   // Calendar View Actions
@@ -1093,7 +1178,6 @@ function initEventListeners() {
     renderCalendar();
   });
   document.getElementById('calNewBookingBtn').addEventListener('click', () => {
-    document.querySelector('[data-view="bookings"]').click();
     openBookingModal();
   });
 
@@ -1119,7 +1203,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Apply initial settings in header/sidebar
   document.querySelector('.logo-text').textContent = state.settings.studioName;
   document.querySelector('.user-profile span').textContent = state.settings.studioName;
-  
+
   initNavigation();
   initEventListeners();
   initSettingsForm();
