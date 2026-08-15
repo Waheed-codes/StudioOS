@@ -42,6 +42,10 @@
   padding: 0;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-main);
   background-color: var(--bg-primary);
@@ -158,6 +162,7 @@ main {
   display: flex;
   flex-direction: column;
   width: calc(100% - var(--sidebar-width));
+  min-width: 0; /* prevents flex children (tables) from forcing page-level overflow */
 }
 
 header {
@@ -203,11 +208,13 @@ header {
   font-weight: 600;
   font-size: 0.8rem;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .content-container {
   padding: 24px;
   flex-grow: 1;
+  min-width: 0;
 }
 
 /* Views display logic */
@@ -227,6 +234,7 @@ header {
   box-shadow: var(--shadow-sm);
   padding: 20px;
   margin-bottom: 20px;
+  min-width: 0;
 }
 
 .card-title {
@@ -237,6 +245,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .card-title span {
@@ -262,6 +272,7 @@ header {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .stat-label {
@@ -278,6 +289,7 @@ header {
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.5px;
+  word-break: break-word;
 }
 
 .dashboard-layout {
@@ -289,6 +301,7 @@ header {
 /* Lists and Tables */
 .table-container {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   background-color: var(--bg-secondary);
@@ -318,6 +331,7 @@ th {
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 td {
@@ -372,6 +386,7 @@ tbody tr:hover td {
   transition: all var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
+  min-height: 36px; /* touch target */
 }
 
 .btn:hover {
@@ -404,6 +419,7 @@ tbody tr:hover td {
 .btn-sm {
   padding: 4px 8px;
   font-size: 0.75rem;
+  min-height: 30px;
 }
 
 /* Full-width block button, e.g. the calendar sidebar "New Booking" CTA.
@@ -446,7 +462,8 @@ tbody tr:hover td {
 .form-control {
   width: 100%;
   padding: 8px 10px;
-  font-size: 0.85rem;
+  font-size: 16px; /* prevents iOS Safari auto-zoom on focus; visually matched via line-height below */
+  line-height: 1.4;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   background-color: var(--bg-secondary);
@@ -552,6 +569,7 @@ textarea.form-control {
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .badge-success { background-color: var(--success-light); color: var(--success-color); border: 1px solid rgba(16, 185, 129, 0.15); }
@@ -592,6 +610,7 @@ textarea.form-control {
   justify-content: center;
   z-index: 200;
   backdrop-filter: blur(1px);
+  padding: 16px;
 }
 
 .modal-overlay.active {
@@ -691,16 +710,34 @@ textarea.form-control {
   font-size: 1.25rem;
   cursor: pointer;
   color: var(--text-primary);
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   align-items: center;
   justify-content: center;
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .menu-toggle:hover {
   background-color: var(--border-light);
+}
+
+/* Backdrop shown behind the mobile sidebar when it's open, so tapping
+   outside the sidebar closes it. Toggle alongside aside.active in JS. */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.3);
+  z-index: 99;
+}
+
+.sidebar-backdrop.active {
+  display: block;
 }
 
 /* Schedule Alert box */
@@ -723,6 +760,7 @@ textarea.form-control {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
 }
 
 .icon-sm {
@@ -846,6 +884,8 @@ textarea.form-control {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .today-schedule-time {
@@ -878,6 +918,7 @@ textarea.form-control {
   font-size: 0.875rem;
   padding: 8px 0;
   border-bottom: 1px solid var(--border-color);
+  gap: 8px;
 }
 
 .team-list-item:last-child {
@@ -887,34 +928,6 @@ textarea.form-control {
 .team-list-role {
   font-size: 0.75rem;
   color: var(--text-secondary);
-}
-
-@media (max-width: 768px) {
-  aside {
-    transform: translateX(-100%);
-  }
-  
-  aside.active {
-    transform: translateX(0);
-    box-shadow: var(--shadow-lg);
-  }
-  
-  main {
-    margin-left: 0;
-    width: 100%;
-  }
-  
-  .menu-toggle {
-    display: flex;
-  }
-  
-  .dashboard-layout {
-    grid-template-columns: 1fr;
-  }
-  
-  .search-input-container {
-    max-width: 100%;
-  }
 }
 
 /* Functional monthly calendar grid and sidebar layouts */
@@ -937,6 +950,8 @@ textarea.form-control {
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
   background-color: #ffffff;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .calendar-nav-controls {
@@ -1184,8 +1199,200 @@ textarea.form-control {
   margin-top: 2px;
 }
 
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+
+/* Tablet: collapse calendar sidebar to full width under the calendar */
 @media (max-width: 992px) {
   .calendar-layout-container {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet/small laptop: dashboard right rail drops below main column */
+@media (max-width: 900px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile: sidebar becomes an off-canvas drawer, content goes full width */
+@media (max-width: 768px) {
+  aside {
+    transform: translateX(-100%);
+    width: min(var(--sidebar-width), 80vw);
+  }
+  
+  aside.active {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  main {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .menu-toggle {
+    display: flex;
+  }
+  
+  header {
+    padding: 0 16px;
+  }
+  
+  .header-title {
+    font-size: 1rem;
+  }
+  
+  .user-profile span {
+    display: none; /* keep just the avatar on very narrow headers */
+  }
+  
+  .content-container {
+    padding: 16px;
+  }
+  
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .stat-card {
+    padding: 12px;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+  
+  .card .table-container {
+    margin: 0 -16px -16px -16px;
+  }
+  
+  .card-title {
+    font-size: 0.9rem;
+  }
+  
+  /* Forms stack to one column and modals go near-fullscreen */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .modal-content {
+    max-width: 100%;
+    max-height: 92vh;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .modal-header,
+  .modal-footer {
+    padding: 14px 16px;
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+  }
+  
+  .search-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input-container {
+    max-width: 100%;
+  }
+  
+  /* Calendar: shrink cell heights and hide the day-of-week cruft so
+     month view stays usable on a phone screen */
+  .calendar-toolbar {
+    padding: 12px 16px;
+  }
+  
+  .calendar-month-title {
+    font-size: 0.95rem;
+    margin-left: 4px;
+  }
+  
+  .calendar-nav-controls .btn span,
+  .calendar-view-switcher .btn span {
+    display: none; /* icon-only nav buttons if the markup wraps label text in a span */
+  }
+  
+  .calendar-grid-body.mode-month {
+    grid-auto-rows: minmax(64px, 1fr);
+  }
+  
+  .calendar-day-cell {
+    padding: 4px;
+  }
+  
+  .calendar-bookings-container {
+    max-height: 40px;
+  }
+  
+  .calendar-booking-badge {
+    font-size: 0.62rem;
+    padding: 2px 4px;
+  }
+  
+  /* Today's schedule / team rows wrap cleanly instead of squeezing */
+  .today-schedule-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .today-schedule-photographer,
+  .today-schedule-location {
+    text-align: left;
+  }
+  
+  /* Tables: allow horizontal scroll but shrink padding so more columns
+     are visible before scrolling kicks in */
+  th, td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+  
+  .table-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendar-grid-header {
+    font-size: 0.6rem;
+  }
+  
+  .calendar-day-number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.72rem;
+  }
+  
+  .logo-container {
+    padding: 0 16px;
   }
 }

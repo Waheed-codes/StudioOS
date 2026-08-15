@@ -1155,6 +1155,7 @@ function initEventListeners() {
   // Calendar View Actions
   document.getElementById('calPrevBtn').addEventListener('click', () => {
     if (calendarViewMode === 'month') {
+      currentCalendarDate.setDate(1)
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
     } else if (calendarViewMode === 'week') {
       currentCalendarDate.setDate(currentCalendarDate.getDate() - 7);
@@ -1165,6 +1166,7 @@ function initEventListeners() {
   });
   document.getElementById('calNextBtn').addEventListener('click', () => {
     if (calendarViewMode === 'month') {
+      currentCalendarDate.setDate(1)
       currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
     } else if (calendarViewMode === 'week') {
       currentCalendarDate.setDate(currentCalendarDate.getDate() + 7);
