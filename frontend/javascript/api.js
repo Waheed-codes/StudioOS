@@ -1,5 +1,8 @@
 // StudioOS - Frontend API Client
-const API_BASE = "http://localhost:4056";
+// Use relative path ("") in production or when served by backend; fallback to localhost:4056 for separate dev servers (e.g. Live Server on port 5500)
+const API_BASE = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "4056")
+  ? "http://localhost:4056"
+  : "";
 
 let authToken = null;
 

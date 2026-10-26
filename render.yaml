@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: studio-os
+    runtime: node
+    plan: free
+    buildCommand: pnpm install
+    startCommand: node backend/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
