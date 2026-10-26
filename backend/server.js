@@ -8,6 +8,7 @@ import bookingDetails from "./controllers/private/bookings.js"
 import settingsRouter from "./controllers/private/settings.js"
 import authMiddleware from "./middleware/auth.js"
 import adminLogin from "./controllers/public/login.js"
+import cors from "cors"
 
 const app = express()
 
