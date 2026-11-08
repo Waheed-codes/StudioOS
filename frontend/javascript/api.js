@@ -1,8 +1,19 @@
 // StudioOS - Frontend API Client
-// Use relative path ("") in production or when served by backend; fallback to localhost:4056 for separate dev servers (e.g. Live Server on port 5500)
-const API_BASE = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "4056")
-  ? "http://localhost:4056"
-  : "";
+// In production or when served by Express, relative URLs ("") call the same origin.
+// In local development with Live Server (port 5500, etc.), fall back to http://localhost:4056
+// Can also be explicitly overridden via window.__API_BASE__
+const getApiBase = () => {
+  if (typeof window === "undefined") return "http://localhost:4056";
+  if (window.__API_BASE__) return window.__API_BASE__;
+
+  const isLocalDevServer = window.location.port && window.location.port !== "4056";
+  if (isLocalDevServer && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return "http://localhost:4056";
+  }
+  return "";
+};
+
+const API_BASE = getApiBase();
 
 let authToken = null;
 

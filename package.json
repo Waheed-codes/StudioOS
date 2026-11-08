@@ -1,24 +1,25 @@
 {
-  "name": "StudioOS",
+  "name": "studioos",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "StudioOS - Photography Studio Management Platform",
+  "main": "backend/server.js",
+  "type": "module",
   "scripts": {
     "start": "node backend/server.js",
-    "build": "echo 'No build step required'"
+    "build": "echo 'No build step required'",
+    "dev": "node backend/server.js"
   },
-  "keywords": [],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "studio",
+    "management",
+    "express",
+    "render"
+  ],
   "author": "",
   "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "12.15.0",
-      "onFail": "download"
-    }
-  },
-  "packageManager": "pnpm@12.15.0",
-  "type": "module",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",

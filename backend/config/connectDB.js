@@ -7,6 +7,10 @@ dotenv.config();
 async function connectDB(){
     try {
         const db_uri = process.env.MONGODB_URI;
+        if (!db_uri) {
+            console.error("Warning: MONGODB_URI is not defined. Please set MONGODB_URI in your environment variables.");
+            return;
+        }
         await mongoose.connect(db_uri);
         console.log("Database Connected Successfully");
 
